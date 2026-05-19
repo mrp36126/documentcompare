@@ -8,8 +8,8 @@ A production-ready Next.js app for turning scanned handwritten country stock/con
 - Tailwind CSS
 - Supabase Postgres and Supabase Storage
 - PapaParse for CSV parsing/export
-- Secure API routes for upload, OCR extraction, correction saves, comparison, and signed downloads
-- Mock OCR provider by default, isolated for replacement in `lib/ocr/extractDocument.ts`
+- Secure API routes for upload, ICR/OCR extraction, correction saves, comparison, and signed downloads
+- Mock ICR provider by default, isolated for replacement in `lib/icr/extractDocument.ts`
 
 ## Local Setup
 
@@ -37,10 +37,11 @@ Set:
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+ICR_PROVIDER_API_KEY=
 OCR_PROVIDER_API_KEY=
 ```
 
-`OCR_PROVIDER_API_KEY` is optional in v1. Without it, the app uses the mock OCR provider so the full workflow can be tested.
+`ICR_PROVIDER_API_KEY` and `OCR_PROVIDER_API_KEY` are optional in v1. Without them, the app uses mock providers so the full workflow can be tested.
 
 3. Configure Supabase:
 
@@ -73,7 +74,7 @@ Open `http://localhost:3000`.
 3. Enter a country name and optional description.
 4. Upload a JPG, PNG, PDF, or HEIC scanned form.
 5. The app stores the file in `original-documents/{documentId}/original-file.ext`.
-6. The mock OCR extracts rows and validates confidence, dates, numeric fields, missing values, and unclear readings.
+6. The mock ICR provider extracts rows first. If ICR cannot confidently identify a cell, the OCR fallback provider tries that value before validation.
 7. On the review screen, edit highlighted cells and mark uncertain fields reviewed.
 8. Click `Save Corrected Data`.
 9. Upload a master CSV on the compare page.
@@ -93,16 +94,19 @@ Date,Ref. no,Batch no,Expiry date,Issued to or received from,Quantity received,Q
 
 Master CSV upload supports exact headers plus flexible aliases such as `Ref no`, `Reference number`, `Batch number`, `Expiry`, `Issued to`, `Received from`, `Qty received`, `Qty issued`, `Losses`, `Adjustments`, `Name`, and `Signature`.
 
-## OCR Provider Replacement
+## ICR Provider Replacement
 
-The OCR boundary is intentionally small:
+Handwritten forms should use Intelligent Character Recognition first. This app then runs OCR as a fallback for cells that ICR marks unreadable, low-confidence, blank, or uncertain. The extraction boundary is intentionally small:
 
-- `lib/ocr/extractDocument.ts`
+- `lib/icr/extractDocument.ts`
+- `lib/icr/provider.ts`
+- `lib/icr/mockIcrProvider.ts`
+- `lib/icr/mockOcrProvider.ts`
 - `lib/ocr/normalizeExtractedRows.ts`
 - `lib/ocr/validateExtractedRows.ts`
 - `lib/ocr/confidenceRules.ts`
 
-Replace `providerExtractDocument` in `lib/ocr/extractDocument.ts` with a call to your OCR/AI provider. Keep the return value as `ExtractedRow[]`:
+Replace `getConfiguredIcrProvider` and `getConfiguredOcrFallbackProvider` in `lib/icr/extractDocument.ts` with production provider adapters. Good ICR candidates are Azure AI Document Intelligence custom extraction, Google Document AI, AWS Textract handwriting, or a vision-language model with structured JSON output. OCR fallback can use the same vendor or a separate OCR service. Keep each provider return value as `ExtractedRow[]`:
 
 ```ts
 type ExtractedCell = {

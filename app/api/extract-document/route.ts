@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { extractDocument } from "@/lib/ocr/extractDocument";
+import { extractDocument } from "@/lib/icr/extractDocument";
 import { createServiceClient, createAuditLog } from "@/lib/supabase/server";
 import { FIELD_KEYS, FIELD_TO_DB_FIELD } from "@/lib/types";
 
@@ -20,10 +20,11 @@ export async function POST(request: Request) {
     await supabase.from("documents").update({ status: "extracting", updated_at: new Date().toISOString() }).eq("id", documentId);
     await createAuditLog(documentId, "extraction_started");
 
-    const rows = await extractDocument({
+    const extraction = await extractDocument({
       documentId,
       filePath: document.original_file_path
     });
+    const rows = extraction.rows;
 
     const dbRows = rows.map((row) => {
       const record: Record<string, unknown> = {
@@ -52,11 +53,12 @@ export async function POST(request: Request) {
       .eq("id", documentId);
 
     await createAuditLog(documentId, "extraction_completed", {
+      provider: extraction.provider,
       rows: rows.length,
       uncertainFields: rows.flatMap((row) => FIELD_KEYS.filter((key) => row[key].isUncertain)).length
     });
 
-    return NextResponse.json({ rows });
+    return NextResponse.json({ provider: extraction.provider, rows });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Extraction failed.";
     return NextResponse.json({ error: message }, { status: 500 });

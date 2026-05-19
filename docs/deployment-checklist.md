@@ -26,10 +26,11 @@ Add these to Production, Preview, and Development unless you intentionally want 
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+ICR_PROVIDER_API_KEY=
 OCR_PROVIDER_API_KEY=
 ```
 
-Leave `OCR_PROVIDER_API_KEY` blank for the mock extraction provider.
+Leave `ICR_PROVIDER_API_KEY` and `OCR_PROVIDER_API_KEY` blank for mock ICR-first extraction with mock OCR fallback. In production, configure ICR first, then OCR fallback if using a separate service.
 
 ## 3. Deploy
 

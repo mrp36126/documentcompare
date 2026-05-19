@@ -33,7 +33,7 @@ export default function NewDocumentPage() {
       const uploadJson = await uploadResponse.json();
       if (!uploadResponse.ok) throw new Error(uploadJson.error || "Upload failed.");
 
-      setStatus("Extracting handwriting with OCR rules...");
+      setStatus("Extracting handwriting with ICR rules...");
       const extractResponse = await fetch("/api/extract-document", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

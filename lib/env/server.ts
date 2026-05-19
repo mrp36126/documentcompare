@@ -7,7 +7,8 @@ const REQUIRED_SERVER_ENV = [
 export type ServerEnvStatus = {
   ok: boolean;
   missing: string[];
-  hasOcrProviderKey: boolean;
+  hasIcrProviderKey: boolean;
+  hasLegacyOcrProviderKey: boolean;
 };
 
 export function getServerEnvStatus(): ServerEnvStatus {
@@ -15,7 +16,8 @@ export function getServerEnvStatus(): ServerEnvStatus {
   return {
     ok: missing.length === 0,
     missing,
-    hasOcrProviderKey: Boolean(process.env.OCR_PROVIDER_API_KEY)
+    hasIcrProviderKey: Boolean(process.env.ICR_PROVIDER_API_KEY),
+    hasLegacyOcrProviderKey: Boolean(process.env.OCR_PROVIDER_API_KEY)
   };
 }
 

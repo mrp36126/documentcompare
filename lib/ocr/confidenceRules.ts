@@ -25,7 +25,7 @@ export function validateCell(field: FieldKey, cell: ExtractedCell): ExtractedCel
 
   if (cell.reason) reasons.add(cell.reason);
   if (cell.confidence < CONFIDENCE_ACCEPTED) {
-    reasons.add(cell.confidence < CONFIDENCE_REVIEW ? "OCR confidence is below 65%." : "OCR confidence needs review.");
+    reasons.add(cell.confidence < CONFIDENCE_REVIEW ? "ICR confidence is below 65%." : "ICR confidence needs review.");
   }
 
   if (REQUIRED_FIELDS.includes(field) && !value) {
