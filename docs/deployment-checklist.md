@@ -27,10 +27,13 @@ NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
 ICR_PROVIDER_API_KEY=
+ICR_PROVIDER_MODEL=gpt-4o
 OCR_PROVIDER_API_KEY=
+OCR_PROVIDER_MODEL=gpt-4o
+ALLOW_MOCK_EXTRACTION=false
 ```
 
-Leave `ICR_PROVIDER_API_KEY` and `OCR_PROVIDER_API_KEY` blank for mock ICR-first extraction with mock OCR fallback. In production, configure ICR first, then OCR fallback if using a separate service.
+Set `ICR_PROVIDER_API_KEY` for real extraction from uploaded files. Set `OCR_PROVIDER_API_KEY` only if using a separate fallback key. Keep `ALLOW_MOCK_EXTRACTION=false` in production.
 
 ## 3. Deploy
 

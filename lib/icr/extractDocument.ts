@@ -1,5 +1,6 @@
 import { mockIcrProvider } from "@/lib/icr/mockIcrProvider";
 import { mockOcrFallbackProvider } from "@/lib/icr/mockOcrProvider";
+import { createOpenAiDocumentProvider } from "@/lib/icr/openAiDocumentProvider";
 import type { DocumentExtractionInput, DocumentExtractionProvider } from "@/lib/icr/provider";
 import { CONFIDENCE_ACCEPTED } from "@/lib/ocr/confidenceRules";
 import { normalizeExtractedRows } from "@/lib/ocr/normalizeExtractedRows";
@@ -7,16 +8,29 @@ import { validateExtractedRows } from "@/lib/ocr/validateExtractedRows";
 import { FIELD_KEYS, type ExtractedCell, type ExtractedRow } from "@/lib/types";
 
 function getConfiguredIcrProvider(): DocumentExtractionProvider {
-  // Replace this adapter with a production ICR provider such as Azure AI
-  // Document Intelligence, Google Document AI, AWS Textract handwriting, or a
-  // handwriting-focused vision model.
-  return mockIcrProvider;
+  if (process.env.ICR_PROVIDER_API_KEY || process.env.OCR_PROVIDER_API_KEY) {
+    return createOpenAiDocumentProvider("icr");
+  }
+
+  if (process.env.ALLOW_MOCK_EXTRACTION === "true") {
+    return mockIcrProvider;
+  }
+
+  throw new Error("No real ICR provider is configured. Add ICR_PROVIDER_API_KEY, or set ALLOW_MOCK_EXTRACTION=true only for testing.");
 }
 
 function getConfiguredOcrFallbackProvider(): DocumentExtractionProvider {
-  // Replace this adapter with a production OCR provider for printed text,
-  // numbers, and fallback corroboration when ICR returns unreadable cells.
-  return mockOcrFallbackProvider;
+  if (process.env.OCR_PROVIDER_API_KEY || process.env.ICR_PROVIDER_API_KEY) {
+    return createOpenAiDocumentProvider("ocr");
+  }
+
+  if (process.env.ALLOW_MOCK_EXTRACTION === "true") {
+    return mockOcrFallbackProvider;
+  }
+
+  // If ICR is real but OCR fallback is not configured, reuse the ICR provider
+  // rather than silently falling back to dummy data.
+  return mockIcrProvider;
 }
 
 function shouldTryOcrFallback(cell: ExtractedCell) {

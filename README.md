@@ -38,10 +38,15 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 ICR_PROVIDER_API_KEY=
+ICR_PROVIDER_MODEL=gpt-4o
 OCR_PROVIDER_API_KEY=
+OCR_PROVIDER_MODEL=gpt-4o
+ALLOW_MOCK_EXTRACTION=false
 ```
 
-`ICR_PROVIDER_API_KEY` and `OCR_PROVIDER_API_KEY` are optional in v1. Without them, the app uses mock providers so the full workflow can be tested.
+Set `ICR_PROVIDER_API_KEY` to your real vision/ICR API key. `OCR_PROVIDER_API_KEY` is optional for a separate OCR fallback service. If you use the same OpenAI key for both passes, setting only `ICR_PROVIDER_API_KEY` is enough.
+
+Mock extraction is now opt-in only. Set `ALLOW_MOCK_EXTRACTION=true` for local workflow testing without a real provider.
 
 3. Configure Supabase:
 
@@ -76,7 +81,7 @@ Open `http://localhost:3000`.
 3. Enter a country name and optional description.
 4. Upload a JPG, PNG, PDF, or HEIC scanned form.
 5. The app stores the file in `original-documents/{documentId}/original-file.ext`.
-6. The mock ICR provider extracts rows first. If ICR cannot confidently identify a cell, the OCR fallback provider tries that value before validation.
+6. The app downloads the uploaded file from Supabase Storage and sends the actual PDF/image to the configured ICR provider. If ICR cannot confidently identify a cell, the OCR fallback provider tries that value before validation.
 7. On the review screen, edit highlighted cells and mark uncertain fields reviewed.
 8. Click `Save Corrected Data`.
 9. Upload a master CSV on the compare page.
@@ -108,7 +113,9 @@ Handwritten forms should use Intelligent Character Recognition first. This app t
 - `lib/ocr/validateExtractedRows.ts`
 - `lib/ocr/confidenceRules.ts`
 
-Replace `getConfiguredIcrProvider` and `getConfiguredOcrFallbackProvider` in `lib/icr/extractDocument.ts` with production provider adapters. Good ICR candidates are Azure AI Document Intelligence custom extraction, Google Document AI, AWS Textract handwriting, or a vision-language model with structured JSON output. OCR fallback can use the same vendor or a separate OCR service. Keep each provider return value as `ExtractedRow[]`:
+The current production adapter in `lib/icr/openAiDocumentProvider.ts` sends the actual uploaded PDF/image bytes to the OpenAI Responses API with structured JSON output. OpenAI's file-input docs state that PDF inputs can be sent as Base64 data and that vision-capable models process both extracted text and page images for PDFs. Their Responses API docs also support structured JSON Schema outputs.
+
+You can replace `getConfiguredIcrProvider` and `getConfiguredOcrFallbackProvider` in `lib/icr/extractDocument.ts` with other production adapters. Good ICR candidates are Azure AI Document Intelligence custom extraction, Google Document AI, AWS Textract handwriting, or a vision-language model with structured JSON output. OCR fallback can use the same vendor or a separate OCR service. Keep each provider return value as `ExtractedRow[]`:
 
 ```ts
 type ExtractedCell = {

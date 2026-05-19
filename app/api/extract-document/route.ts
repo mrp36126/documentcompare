@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { extractDocument } from "@/lib/icr/extractDocument";
 import { createServiceClient, createAuditLog } from "@/lib/supabase/server";
 import { FIELD_KEYS, FIELD_TO_DB_FIELD } from "@/lib/types";
+import { errorMessage } from "@/lib/errors";
+
+function filenameFromPath(path: string) {
+  return path.split("/").pop() || "uploaded-document";
+}
 
 export async function POST(request: Request) {
   try {
@@ -20,9 +25,19 @@ export async function POST(request: Request) {
     await supabase.from("documents").update({ status: "extracting", updated_at: new Date().toISOString() }).eq("id", documentId);
     await createAuditLog(documentId, "extraction_started");
 
+    const { data: fileBlob, error: downloadError } = await supabase.storage
+      .from("original-documents")
+      .download(document.original_file_path);
+    if (downloadError || !fileBlob) throw downloadError ?? new Error("Could not download uploaded file for extraction.");
+
     const extraction = await extractDocument({
       documentId,
-      filePath: document.original_file_path
+      filePath: document.original_file_path,
+      file: {
+        bytes: Buffer.from(await fileBlob.arrayBuffer()),
+        mimeType: fileBlob.type || "application/octet-stream",
+        filename: filenameFromPath(document.original_file_path)
+      }
     });
     const rows = extraction.rows;
 
@@ -60,7 +75,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ provider: extraction.provider, rows });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Extraction failed.";
+    const message = errorMessage(error, "Extraction failed.");
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

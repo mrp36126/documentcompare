@@ -3,6 +3,11 @@ import type { ExtractedRow } from "@/lib/types";
 export type DocumentExtractionInput = {
   documentId: string;
   filePath: string;
+  file?: {
+    bytes: Buffer;
+    mimeType: string;
+    filename: string;
+  };
 };
 
 export type DocumentExtractionProvider = {
