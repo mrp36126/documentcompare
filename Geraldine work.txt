@@ -22,3 +22,6 @@ postgresql://postgres.cjjatinghxieaidmlidi:4mzC7sp&HsW%?!y@aws-0-eu-west-1.poole
 
 Session pooler
 postgresql://postgres.cjjatinghxieaidmlidi:4mzC7sp&HsW%?!y@aws-0-eu-west-1.pooler.supabase.com:5432/postgres
+
+OCR key
+K86345471388957

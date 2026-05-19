@@ -53,6 +53,8 @@ OCR_PROVIDER_API_KEY=
   - `generated-csv`
   - `master-csv`
 
+The API also attempts to create missing buckets with the service role key at runtime. If uploads show `Bucket not found`, run the migration again or create the buckets manually in Supabase Storage.
+
 4. Start the app:
 
 ```bash

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient, createAuditLog } from "@/lib/supabase/server";
+import { ensureStorageBucket } from "@/lib/supabase/storage";
 
 const ACCEPTED_TYPES = new Set([
   "image/jpeg",
@@ -54,6 +55,8 @@ export async function POST(request: Request) {
     }
 
     const supabase = createServiceClient();
+    await ensureStorageBucket(supabase, "original-documents");
+
     const documentId = crypto.randomUUID();
     const originalFilePath = `${documentId}/original-file.${extensionFor(file)}`;
     const buffer = Buffer.from(await file.arrayBuffer());

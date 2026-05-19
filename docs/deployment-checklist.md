@@ -80,6 +80,6 @@ Then test the product workflow:
 
 - `Missing required environment variables`: add all required env vars in Vercel and redeploy.
 - `relation "documents" does not exist`: run the Supabase SQL migration.
-- Storage upload errors: confirm the three buckets exist and are private.
+- `Bucket not found` or storage upload errors: run the Supabase migration again, or create private buckets named `original-documents`, `generated-csv`, and `master-csv` in Supabase Storage. The API will also try to create missing buckets when the service role key has permission.
 - Download link errors: confirm `SUPABASE_SERVICE_ROLE_KEY` is set on Vercel.
 - Build succeeds but app errors on dashboard: check `/api/health` first.

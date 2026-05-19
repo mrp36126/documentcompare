@@ -3,6 +3,7 @@ import { compareRows } from "@/lib/csv/compareRows";
 import { rowsToCsv } from "@/lib/csv/exportCsv";
 import { parseCsv } from "@/lib/csv/parseCsv";
 import { createServiceClient, createAuditLog } from "@/lib/supabase/server";
+import { ensureStorageBucket } from "@/lib/supabase/storage";
 import { FIELD_KEYS, FIELD_TO_DB_FIELD, type CorrectedRow } from "@/lib/types";
 
 type Params = { params: Promise<{ id: string }> };
@@ -42,6 +43,9 @@ export async function POST(request: Request, context: Params) {
     const csvText = await file.text();
     const parsed = parseCsv(csvText);
     const supabase = createServiceClient();
+    await ensureStorageBucket(supabase, "master-csv");
+    await ensureStorageBucket(supabase, "generated-csv");
+
     const masterPath = `${id}/master.csv`;
 
     const masterUpload = await supabase.storage

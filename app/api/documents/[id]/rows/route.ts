@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServiceClient, createAuditLog } from "@/lib/supabase/server";
+import { ensureStorageBucket } from "@/lib/supabase/storage";
 import {
   FIELD_KEYS,
   FIELD_TO_DB_FIELD,
@@ -63,6 +64,8 @@ export async function PUT(request: Request, context: Params) {
     }
 
     const supabase = createServiceClient();
+    await ensureStorageBucket(supabase, "generated-csv");
+
     const correctedRows: CorrectedRow[] = rows.map((row) => {
       const corrected = { id: row.id, rowIndex: row.rowIndex } as CorrectedRow;
       for (const key of FIELD_KEYS) corrected[key] = row[key].value.trim();
