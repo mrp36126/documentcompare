@@ -47,7 +47,7 @@ export default function NewDocumentPage() {
       }
       const document = uploadJson.document as { id: string };
 
-      setStatus("Extracting handwriting with ICR rules...");
+      setStatus("Extracting document with OCR rules...");
       const extractResponse = await fetch("/api/extract-document", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

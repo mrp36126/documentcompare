@@ -29,7 +29,7 @@ export default async function DashboardPage() {
           <p className="text-sm font-semibold uppercase tracking-wide text-brand">Production workflow</p>
           <h1 className="mt-2 text-3xl font-bold text-ink">Country Stock Sheet Digitizer</h1>
           <p className="mt-3 max-w-3xl text-slate-600">
-            Upload scanned handwritten stock/control forms, review uncertain ICR fields, compare corrected rows against a master CSV,
+            Upload scanned handwritten stock/control forms, review uncertain OCR fields, compare corrected rows against a master CSV,
             and export updated and exception files.
           </p>
           <div className="mt-6 flex flex-wrap gap-3">

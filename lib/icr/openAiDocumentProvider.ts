@@ -53,7 +53,7 @@ const RESPONSE_SCHEMA = {
 
 function apiKeyFor(mode: OpenAiMode) {
   if (mode === "icr") return process.env.ICR_PROVIDER_API_KEY || process.env.OCR_PROVIDER_API_KEY;
-  return process.env.OCR_PROVIDER_API_KEY || process.env.ICR_PROVIDER_API_KEY;
+  return process.env.OCR_PROVIDER_API_KEY;
 }
 
 function modelFor(mode: OpenAiMode) {
@@ -65,7 +65,7 @@ function promptFor(mode: OpenAiMode) {
   const focus =
     mode === "icr"
       ? "Use intelligent character recognition for handwritten table entries. Prioritize handwriting interpretation and mark unclear handwriting as uncertain."
-      : "Use OCR-style visual reading as a fallback. Focus on printed context, numerals, dates, and any handwritten cells that may have been unreadable to ICR.";
+      : "Use OCR-style visual reading on the uploaded form. Focus on the visible table, printed headers, numerals, dates, and handwritten entries. Mark unclear handwritten values as uncertain.";
 
   return `${focus}
 
@@ -156,7 +156,7 @@ function toExtractedRows(payload: OpenAiExtractionResponse): ExtractedRow[] {
 
 export function createOpenAiDocumentProvider(mode: OpenAiMode): DocumentExtractionProvider {
   return {
-    name: mode === "icr" ? "OpenAI Vision ICR Provider" : "OpenAI Vision OCR Fallback Provider",
+    name: mode === "icr" ? "OpenAI Vision ICR Provider" : "OpenAI Vision OCR Provider",
     kind: mode === "icr" ? "vision-ai" : "ocr",
     async extract(input) {
       const key = apiKeyFor(mode);

@@ -25,10 +25,6 @@ export function hasConfiguredOcrFallbackProvider() {
 }
 
 export function getExtractionProviderLabel() {
-  if (process.env.ICR_PROVIDER_API_KEY && process.env.OCR_PROVIDER_API_KEY) {
-    return "configured ICR provider with OCR fallback";
-  }
-  if (process.env.ICR_PROVIDER_API_KEY) return "configured ICR provider";
-  if (process.env.OCR_PROVIDER_API_KEY) return "mock ICR provider with configured OCR fallback";
-  return "mock ICR provider with mock OCR fallback";
+  if (process.env.OCR_PROVIDER_API_KEY) return "configured OCR provider";
+  return "mock OCR provider";
 }
