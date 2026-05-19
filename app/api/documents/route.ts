@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServiceClient, createAuditLog } from "@/lib/supabase/server";
 import { ensureStorageBucket } from "@/lib/supabase/storage";
+import { errorMessage } from "@/lib/errors";
 
 const ACCEPTED_TYPES = new Set([
   "image/jpeg",
@@ -36,7 +37,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  let step = "start";
   try {
+    step = "read form data";
     const formData = await request.formData();
     const file = formData.get("file");
     const countryName = String(formData.get("countryName") ?? "").trim();
@@ -54,13 +57,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Country name is required." }, { status: 400 });
     }
 
+    step = "connect to Supabase";
     const supabase = createServiceClient();
+    step = "ensure original-documents bucket";
     await ensureStorageBucket(supabase, "original-documents");
 
     const documentId = crypto.randomUUID();
     const originalFilePath = `${documentId}/original-file.${extensionFor(file)}`;
+    step = "read uploaded file";
     const buffer = Buffer.from(await file.arrayBuffer());
 
+    step = "upload original file to Supabase Storage";
     const upload = await supabase.storage
       .from("original-documents")
       .upload(originalFilePath, buffer, {
@@ -70,6 +77,7 @@ export async function POST(request: Request) {
 
     if (upload.error) throw upload.error;
 
+    step = "create document database record";
     const { data, error } = await supabase
       .from("documents")
       .insert({
@@ -83,10 +91,23 @@ export async function POST(request: Request) {
       .single();
 
     if (error) throw error;
-    await createAuditLog(documentId, "document_uploaded", { fileName: file.name, contentType: file.type });
+    step = "write audit log";
+    await createAuditLog(documentId, "document_uploaded", {
+      fileName: file.name,
+      contentType: file.type,
+      fileSize: file.size
+    });
 
     return NextResponse.json({ document: data });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Upload failed." }, { status: 500 });
+    const message = errorMessage(error, "Upload failed.");
+    console.error("Document upload failed", { step, message, error });
+    return NextResponse.json(
+      {
+        error: message,
+        step
+      },
+      { status: 500 }
+    );
   }
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerEnvStatus } from "@/lib/env/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getStorageBucketStatus } from "@/lib/supabase/storage";
+import { errorMessage } from "@/lib/errors";
 
 export async function GET() {
   const env = getServerEnvStatus();
@@ -20,17 +21,30 @@ export async function GET() {
 
   try {
     const supabase = createServiceClient();
-    const { error } = await supabase.from("documents").select("id", { count: "exact", head: true });
-    if (error) throw error;
+    const requiredTables = ["documents", "extracted_rows", "comparison_results", "audit_logs"];
+    const tables = await Promise.all(
+      requiredTables.map(async (table) => {
+        const { error } = await supabase.from(table).select("id", { count: "exact", head: true });
+        return {
+          table,
+          ok: !error,
+          message: error ? errorMessage(error) : undefined
+        };
+      })
+    );
+    const database = {
+      ok: tables.every((table) => table.ok),
+      tables
+    };
     const storage = await getStorageBucketStatus(supabase);
 
     return NextResponse.json({
-      ok: storage.ok,
+      ok: database.ok && storage.ok,
       service: "country-stock-sheet-digitizer",
       environment: env,
-      database: { ok: true },
+      database,
       storage
-    }, { status: storage.ok ? 200 : 503 });
+    }, { status: database.ok && storage.ok ? 200 : 503 });
   } catch (error) {
     return NextResponse.json(
       {
@@ -39,7 +53,7 @@ export async function GET() {
         environment: env,
         database: {
           ok: false,
-          message: error instanceof Error ? error.message : "Unable to reach Supabase."
+          message: errorMessage(error, "Unable to reach Supabase.")
         },
         storage: { ok: false, buckets: [] }
       },

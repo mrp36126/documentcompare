@@ -14,6 +14,16 @@ export default function NewDocumentPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
+  async function readJsonResponse(response: Response) {
+    const text = await response.text();
+    if (!text) return {};
+    try {
+      return JSON.parse(text) as Record<string, unknown>;
+    } catch {
+      return { error: text };
+    }
+  }
+
   async function submit() {
     if (!file) {
       setError("Choose a scanned form before uploading.");
@@ -30,20 +40,24 @@ export default function NewDocumentPage() {
       formData.append("description", description);
 
       const uploadResponse = await fetch("/api/documents", { method: "POST", body: formData });
-      const uploadJson = await uploadResponse.json();
-      if (!uploadResponse.ok) throw new Error(uploadJson.error || "Upload failed.");
+      const uploadJson = await readJsonResponse(uploadResponse);
+      if (!uploadResponse.ok) {
+        const step = typeof uploadJson.step === "string" ? ` (${uploadJson.step})` : "";
+        throw new Error(`${String(uploadJson.error || "Upload failed.")}${step}`);
+      }
+      const document = uploadJson.document as { id: string };
 
       setStatus("Extracting handwriting with ICR rules...");
       const extractResponse = await fetch("/api/extract-document", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ documentId: uploadJson.document.id })
+        body: JSON.stringify({ documentId: document.id })
       });
-      const extractJson = await extractResponse.json();
-      if (!extractResponse.ok) throw new Error(extractJson.error || "Extraction failed.");
+      const extractJson = await readJsonResponse(extractResponse);
+      if (!extractResponse.ok) throw new Error(String(extractJson.error || "Extraction failed."));
 
       setStatus("Extraction complete. Opening review screen...");
-      router.push(`/documents/${uploadJson.document.id}/review`);
+      router.push(`/documents/${document.id}/review`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Something went wrong.");
       setStatus("");
