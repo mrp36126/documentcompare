@@ -118,6 +118,7 @@ The default production adapter in `lib/icr/ocrSpaceDocumentProvider.ts` sends th
 
 An optional OpenAI adapter remains available in `lib/icr/openAiDocumentProvider.ts`. Set `OCR_PROVIDER=openai` to use it with an OpenAI API key.
 
+
 You can replace `getConfiguredOcrProvider` in `lib/icr/extractDocument.ts` with another production OCR adapter. Keep each provider return value as `ExtractedRow[]`:
 
 ```ts
