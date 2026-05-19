@@ -1,4 +1,5 @@
 import { mockOcrFallbackProvider as mockOcrProvider } from "@/lib/icr/mockOcrProvider";
+import { createOcrSpaceDocumentProvider } from "@/lib/icr/ocrSpaceDocumentProvider";
 import { createOpenAiDocumentProvider } from "@/lib/icr/openAiDocumentProvider";
 import type { DocumentExtractionInput, DocumentExtractionProvider } from "@/lib/icr/provider";
 import { normalizeExtractedRows } from "@/lib/ocr/normalizeExtractedRows";
@@ -6,15 +7,19 @@ import { validateExtractedRows } from "@/lib/ocr/validateExtractedRows";
 import { FIELD_KEYS } from "@/lib/types";
 
 function getConfiguredOcrProvider(): DocumentExtractionProvider {
-  if (process.env.OCR_PROVIDER_API_KEY) {
+  if (process.env.OCR_PROVIDER === "openai" && process.env.OCR_PROVIDER_API_KEY) {
     return createOpenAiDocumentProvider("ocr");
+  }
+
+  if (process.env.OCR_SPACE_API_KEY || process.env.OCR_PROVIDER_API_KEY) {
+    return createOcrSpaceDocumentProvider();
   }
 
   if (process.env.ALLOW_MOCK_EXTRACTION === "true") {
     return mockOcrProvider;
   }
 
-  throw new Error("No real OCR provider is configured. Add OCR_PROVIDER_API_KEY, or set ALLOW_MOCK_EXTRACTION=true only for local testing.");
+  throw new Error("No real OCR provider is configured. Add OCR_PROVIDER_API_KEY for OCR.Space, or set ALLOW_MOCK_EXTRACTION=true only for local testing.");
 }
 
 export async function extractDocument(input: DocumentExtractionInput) {

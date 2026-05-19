@@ -26,12 +26,14 @@ Add these to Production, Preview, and Development unless you intentionally want 
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
-OCR_PROVIDER_API_KEY=your-ocr-or-openai-api-key
-OCR_PROVIDER_MODEL=gpt-4o
+OCR_PROVIDER=ocrspace
+OCR_PROVIDER_API_KEY=your-ocr-space-api-key
+OCR_SPACE_LANGUAGE=eng
+OCR_SPACE_ENGINE=2
 ALLOW_MOCK_EXTRACTION=false
 ```
 
-Set `OCR_PROVIDER_API_KEY` for real extraction from uploaded files. Keep `ALLOW_MOCK_EXTRACTION=false` in production.
+Set `OCR_PROVIDER_API_KEY` to your OCR.Space API key for real extraction from uploaded files. Keep `ALLOW_MOCK_EXTRACTION=false` in production.
 
 ## 3. Deploy
 

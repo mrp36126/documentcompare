@@ -37,12 +37,16 @@ Set:
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+OCR_PROVIDER=ocrspace
 OCR_PROVIDER_API_KEY=
-OCR_PROVIDER_MODEL=gpt-4o
+OCR_SPACE_LANGUAGE=eng
+OCR_SPACE_ENGINE=2
 ALLOW_MOCK_EXTRACTION=false
 ```
 
-Set `OCR_PROVIDER_API_KEY` to your OCR/vision API key. The app currently uses one OCR pass only against the actual uploaded file.
+Set `OCR_PROVIDER_API_KEY` to your OCR.Space API key. The app uses OCR.Space by default and runs one OCR pass against the actual uploaded file.
+
+To use OpenAI vision instead, set `OCR_PROVIDER=openai`, set `OCR_PROVIDER_API_KEY` to an OpenAI API key, and optionally set `OCR_PROVIDER_MODEL`.
 
 Mock extraction is now opt-in only. Set `ALLOW_MOCK_EXTRACTION=true` for local workflow testing without a real provider.
 
@@ -110,7 +114,9 @@ For the current phase, the app uses one OCR/vision extraction pass against the r
 - `lib/ocr/validateExtractedRows.ts`
 - `lib/ocr/confidenceRules.ts`
 
-The current production adapter in `lib/icr/openAiDocumentProvider.ts` sends the actual uploaded PDF/image bytes to the OpenAI Responses API with structured JSON output. OpenAI's file-input docs state that PDF inputs can be sent as Base64 data and that vision-capable models process both extracted text and page images for PDFs. Their Responses API docs also support structured JSON Schema outputs.
+The default production adapter in `lib/icr/ocrSpaceDocumentProvider.ts` sends the actual uploaded PDF/image bytes to OCR.Space and converts returned table/overlay text into the app's extracted row format. OCR.Space does not provide semantic per-field certainty, so extracted cells are intentionally marked for review.
+
+An optional OpenAI adapter remains available in `lib/icr/openAiDocumentProvider.ts`. Set `OCR_PROVIDER=openai` to use it with an OpenAI API key.
 
 You can replace `getConfiguredOcrProvider` in `lib/icr/extractDocument.ts` with another production OCR adapter. Keep each provider return value as `ExtractedRow[]`:
 
