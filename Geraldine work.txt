@@ -1,0 +1,24 @@
+Geraldine work
+
+Supabase Database password:
+4mzC7sp&HsW%?!y
+
+anon public
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqamF0aW5naHhpZWFpZG1saWRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxODkwNTMsImV4cCI6MjA5NDc2NTA1M30.mqaoR8ClOHdiujFmZ853R6InzTaBjfRI4Z9SYHHRZ2o
+
+service_role secret
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqamF0aW5naHhpZWFpZG1saWRpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTE4OTA1MywiZXhwIjoyMDk0NzY1MDUzfQ.gz_9nxfB3c_eOrQ5waIGGJ3fTEjEc1XLJQRVBc-dU8Y
+
+API URL
+https://cjjatinghxieaidmlidi.supabase.co/rest/v1/
+https://cjjatinghxieaidmlidi.supabase.co
+
+Direct connection
+postgresql://postgres:4mzC7sp&HsW%?!y@db.cjjatinghxieaidmlidi.supabase.co:5432/postgres
+
+Transaction pooler
+postgresql://postgres.cjjatinghxieaidmlidi:4mzC7sp&HsW%?!y@aws-0-eu-west-1.pooler.supabase.com:6543/postgres
+
+
+Session pooler
+postgresql://postgres.cjjatinghxieaidmlidi:4mzC7sp&HsW%?!y@aws-0-eu-west-1.pooler.supabase.com:5432/postgres
