@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  background: #f7faf9;
+  color: #14213d;
+}
+
+input,
+textarea,
+button,
+select {
+  font: inherit;
+}
+
+.table-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 transparent;
+}
