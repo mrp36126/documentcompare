@@ -1,0 +1,12 @@
+{
+  "framework": "nextjs",
+  "regions": ["iad1"],
+  "functions": {
+    "app/api/extract-document/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/documents/[id]/compare/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}

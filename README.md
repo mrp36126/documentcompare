@@ -129,6 +129,14 @@ The migration enables RLS and intentionally does not add broad public policies f
 4. Deploy.
 5. Confirm the Supabase migration has been run before using the deployed app.
 
+See `docs/deployment-checklist.md` for the full production checklist and smoke test.
+
+After deployment, verify configuration with:
+
+```text
+https://your-vercel-domain/api/health
+```
+
 ## GitHub Setup
 
 ```bash
@@ -140,3 +148,7 @@ git push -u origin main
 ```
 
 You can also use GitHub Desktop: add the local repository, commit all generated files, then publish.
+
+## Sample CSV Files
+
+Use `samples/master.csv` to test a normal comparison. Use `samples/alternate-header-master.csv` to test flexible master CSV header mapping.
