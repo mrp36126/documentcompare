@@ -22,13 +22,15 @@ export function confidenceBand(confidence: number) {
 export function validateCell(field: FieldKey, cell: ExtractedCell): ExtractedCell {
   const reasons = new Set<string>();
   const value = cell.value.trim();
+  const isBlank = !value;
+  const isRequired = REQUIRED_FIELDS.includes(field);
 
   if (cell.reason) reasons.add(cell.reason);
-  if (cell.confidence < CONFIDENCE_ACCEPTED) {
+  if (!isBlank && cell.confidence < CONFIDENCE_ACCEPTED) {
     reasons.add(cell.confidence < CONFIDENCE_REVIEW ? "OCR confidence is below 65%." : "OCR confidence needs review.");
   }
 
-  if (REQUIRED_FIELDS.includes(field) && !value) {
+  if (isRequired && isBlank) {
     reasons.add("Required field is missing.");
   }
 
@@ -38,9 +40,9 @@ export function validateCell(field: FieldKey, cell: ExtractedCell): ExtractedCel
   }
 
   if (NUMERIC_FIELDS.includes(field)) {
-    if (!value) {
+    if (isRequired && isBlank) {
       reasons.add("Numeric field is blank.");
-    } else if (!/^-?\d+(\.\d+)?$/.test(value.replace(/,/g, ""))) {
+    } else if (value && !/^-?\d+(\.\d+)?$/.test(value.replace(/,/g, ""))) {
       reasons.add("Numeric field contains invalid characters.");
     }
   }

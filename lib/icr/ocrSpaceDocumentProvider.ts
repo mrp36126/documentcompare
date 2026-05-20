@@ -43,7 +43,7 @@ type PositionedWord = {
 
 const OCR_SPACE_ENDPOINT = "https://api.ocr.space/parse/image";
 const CELL_CONFIDENCE = 0.7;
-const EMPTY_CELL_CONFIDENCE = 0.35;
+const EMPTY_CELL_CONFIDENCE = 0.99;
 
 const HEADER_HINTS = [
   "date",
@@ -58,6 +58,20 @@ const HEADER_HINTS = [
   "signature"
 ];
 
+const HEADER_ALIASES: Record<FieldKey, string[]> = {
+  date: ["date"],
+  refNo: ["ref", "ref no", "reference"],
+  batchNo: ["batch", "batch no"],
+  expiryDate: ["expiry", "expiry date"],
+  issuedToOrReceivedFrom: ["issued", "received", "issued to", "received from"],
+  quantityReceived: ["quantity received", "qty received", "received"],
+  quantityIssued: ["quantity issued", "qty issued", "issued"],
+  lossesAndAdjustments: ["losses", "adjustments"],
+  balance: ["balance"],
+  remarks: ["remarks"],
+  nameAndSignature: ["signature", "name"]
+};
+
 function ocrSpaceError(payload: OcrSpaceResponse, fallback: string) {
   const errors = [
     payload.ErrorMessage,
@@ -71,9 +85,17 @@ function ocrSpaceError(payload: OcrSpaceResponse, fallback: string) {
 
 function cell(value: string, confidence = CELL_CONFIDENCE, reason?: string): ExtractedCell {
   const trimmed = value.trim();
+  if (!trimmed) {
+    return {
+      value: "",
+      confidence: EMPTY_CELL_CONFIDENCE,
+      isUncertain: false
+    };
+  }
+
   return {
     value: trimmed,
-    confidence: trimmed ? confidence : EMPTY_CELL_CONFIDENCE,
+    confidence,
     isUncertain: true,
     reason: reason || "OCR.Space provides text extraction only; please review this field."
   };
@@ -151,6 +173,9 @@ function estimateColumnBounds(lines: OcrSpaceLine[]) {
   const allWords = lines.flatMap(wordsFromLine);
   if (!allWords.length) return null;
 
+  const headerBounds = estimateColumnBoundsFromHeaders(lines);
+  if (headerBounds) return headerBounds;
+
   const minLeft = Math.min(...allWords.map((word) => word.left));
   const maxRight = Math.max(...allWords.map((word) => word.right));
   const width = Math.max(maxRight - minLeft, FIELD_KEYS.length);
@@ -159,6 +184,78 @@ function estimateColumnBounds(lines: OcrSpaceLine[]) {
     left: minLeft + (width * index) / FIELD_KEYS.length,
     right: minLeft + (width * (index + 1)) / FIELD_KEYS.length
   }));
+}
+
+function estimateColumnBoundsFromHeaders(lines: OcrSpaceLine[]) {
+  const headerWords = lines
+    .filter(isHeaderLine)
+    .flatMap(wordsFromLine)
+    .sort((a, b) => a.left - b.left);
+
+  if (headerWords.length < 2) return null;
+
+  const centers = FIELD_KEYS.map((key) => findHeaderCenter(key, headerWords));
+  if (centers.filter((center): center is number => typeof center === "number").length < 2) {
+    return null;
+  }
+
+  const allWords = lines.flatMap(wordsFromLine);
+  const minLeft = Math.min(...allWords.map((word) => word.left));
+  const maxRight = Math.max(...allWords.map((word) => word.right));
+  const resolvedCenters = interpolateCenters(centers, minLeft, maxRight);
+
+  return resolvedCenters.map((center, index) => {
+    const previous = resolvedCenters[index - 1];
+    const next = resolvedCenters[index + 1];
+    return {
+      left: index === 0 ? minLeft : (previous + center) / 2,
+      right: index === resolvedCenters.length - 1 ? maxRight : (center + next) / 2
+    };
+  });
+}
+
+function findHeaderCenter(key: FieldKey, words: PositionedWord[]) {
+  const aliases = HEADER_ALIASES[key];
+  const normalizedWords = words.map((word) => ({
+    ...word,
+    normalized: normalizeHeaderToken(word.text)
+  }));
+
+  for (const alias of aliases) {
+    const aliasParts = alias.split(" ").map(normalizeHeaderToken);
+    for (let index = 0; index <= normalizedWords.length - aliasParts.length; index += 1) {
+      const phrase = normalizedWords.slice(index, index + aliasParts.length);
+      if (phrase.every((word, partIndex) => word.normalized.includes(aliasParts[partIndex]))) {
+        const left = Math.min(...phrase.map((word) => word.left));
+        const right = Math.max(...phrase.map((word) => word.right));
+        return (left + right) / 2;
+      }
+    }
+  }
+
+  return undefined;
+}
+
+function normalizeHeaderToken(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function interpolateCenters(
+  centers: Array<number | undefined>,
+  minLeft: number,
+  maxRight: number
+) {
+  const fallbackWidth = Math.max(maxRight - minLeft, FIELD_KEYS.length);
+  const evenCenters = FIELD_KEYS.map((_, index) => minLeft + (fallbackWidth * (index + 0.5)) / FIELD_KEYS.length);
+  const resolved = centers.map((center, index) => center ?? evenCenters[index]);
+
+  for (let index = 1; index < resolved.length; index += 1) {
+    if (resolved[index] <= resolved[index - 1]) {
+      resolved[index] = resolved[index - 1] + 1;
+    }
+  }
+
+  return resolved;
 }
 
 function keyForWord(word: PositionedWord, bounds: Array<{ left: number; right: number }>): FieldKey {
