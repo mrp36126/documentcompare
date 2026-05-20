@@ -63,14 +63,29 @@ const HEADER_ALIASES: Record<FieldKey, string[]> = {
   refNo: ["ref", "ref no", "reference"],
   batchNo: ["batch", "batch no"],
   expiryDate: ["expiry", "expiry date"],
-  issuedToOrReceivedFrom: ["issued", "received", "issued to", "received from"],
-  quantityReceived: ["quantity received", "qty received", "received"],
-  quantityIssued: ["quantity issued", "qty issued", "issued"],
+  issuedToOrReceivedFrom: ["issued to or received from", "issued to", "received from"],
+  quantityReceived: ["quantity received", "qty received"],
+  quantityIssued: ["quantity issued", "qty issued"],
   lossesAndAdjustments: ["losses", "adjustments"],
   balance: ["balance"],
   remarks: ["remarks"],
   nameAndSignature: ["signature", "name"]
 };
+
+const STOCK_SHEET_COLUMN_RATIOS = [
+  0,
+  0.065,
+  0.158,
+  0.248,
+  0.321,
+  0.474,
+  0.532,
+  0.591,
+  0.662,
+  0.721,
+  0.864,
+  1
+];
 
 function ocrSpaceError(payload: OcrSpaceResponse, fallback: string) {
   const errors = [
@@ -176,14 +191,7 @@ function estimateColumnBounds(lines: OcrSpaceLine[]) {
   const headerBounds = estimateColumnBoundsFromHeaders(lines);
   if (headerBounds) return headerBounds;
 
-  const minLeft = Math.min(...allWords.map((word) => word.left));
-  const maxRight = Math.max(...allWords.map((word) => word.right));
-  const width = Math.max(maxRight - minLeft, FIELD_KEYS.length);
-
-  return FIELD_KEYS.map((_, index) => ({
-    left: minLeft + (width * index) / FIELD_KEYS.length,
-    right: minLeft + (width * (index + 1)) / FIELD_KEYS.length
-  }));
+  return estimateStockSheetColumnBounds(allWords);
 }
 
 function estimateColumnBoundsFromHeaders(lines: OcrSpaceLine[]) {
@@ -195,7 +203,7 @@ function estimateColumnBoundsFromHeaders(lines: OcrSpaceLine[]) {
   if (headerWords.length < 2) return null;
 
   const centers = FIELD_KEYS.map((key) => findHeaderCenter(key, headerWords));
-  if (centers.filter((center): center is number => typeof center === "number").length < 2) {
+  if (centers.filter((center): center is number => typeof center === "number").length < 5) {
     return null;
   }
 
@@ -212,6 +220,17 @@ function estimateColumnBoundsFromHeaders(lines: OcrSpaceLine[]) {
       right: index === resolvedCenters.length - 1 ? maxRight : (center + next) / 2
     };
   });
+}
+
+function estimateStockSheetColumnBounds(words: PositionedWord[]) {
+  const minLeft = Math.min(...words.map((word) => word.left));
+  const maxRight = Math.max(...words.map((word) => word.right));
+  const width = Math.max(maxRight - minLeft, FIELD_KEYS.length);
+
+  return FIELD_KEYS.map((_, index) => ({
+    left: minLeft + width * STOCK_SHEET_COLUMN_RATIOS[index],
+    right: minLeft + width * STOCK_SHEET_COLUMN_RATIOS[index + 1]
+  }));
 }
 
 function findHeaderCenter(key: FieldKey, words: PositionedWord[]) {
