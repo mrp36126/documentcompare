@@ -312,8 +312,18 @@ function splitParsedTextLine(line: string) {
   const trimmed = line.trim();
   if (!trimmed) return [];
 
+  if (line.includes("|")) {
+    const parts = line.split("|").map((value) => value.trim());
+    if (!parts[0]) parts.shift();
+    if (!parts[parts.length - 1]) parts.pop();
+    return parts;
+  }
   if (line.includes("\t")) return line.split(/\t/).map((value) => value.trim());
   return trimmed.split(/\s{2,}/).map((value) => value.trim()).filter(Boolean);
+}
+
+function isParsedTextSeparatorRow(parts: string[]) {
+  return parts.length > 1 && parts.every((part) => !part || /^[-+:()\s]+$/.test(part));
 }
 
 function rowsFromParsedText(results: OcrSpaceParsedResult[]) {
@@ -327,6 +337,7 @@ function rowsFromParsedText(results: OcrSpaceParsedResult[]) {
 
   return candidates
     .map(splitParsedTextLine)
+    .filter((parts) => !isParsedTextSeparatorRow(parts))
     .filter((parts) => parts.length >= 2 && parts.some(isUsefulDataText))
     .map((parts, index) => {
       const values = parts.length > FIELD_KEYS.length
