@@ -17,7 +17,11 @@ const HEADER_ALIASES: Record<string, string[]> = {
 };
 
 export function mapCsvHeaders(headers: string[]) {
-  const normalizedHeaderMap = new Map(headers.map((header) => [normalizeLooseHeader(header), header]));
+  const normalizedHeaderMap = new Map(
+    headers
+      .filter((header) => normalizeLooseHeader(header))
+      .map((header) => [normalizeLooseHeader(header), header])
+  );
   const result = new Map<string, string>();
 
   for (const canonical of FORM_HEADERS) {
@@ -41,7 +45,12 @@ export function parseCsv(content: string) {
     throw new Error(parsed.errors.map((error) => error.message).join("; "));
   }
 
-  const headers = parsed.meta.fields ?? [];
+  const renamedBlankHeaders = new Set(
+    Object.entries(parsed.meta.renamedHeaders ?? {})
+      .filter(([, originalHeader]) => !normalizeLooseHeader(originalHeader))
+      .map(([renamedHeader]) => renamedHeader)
+  );
+  const headers = (parsed.meta.fields ?? []).filter((header) => normalizeLooseHeader(header) && !renamedBlankHeaders.has(header));
   if (!headers.length) throw new Error("CSV file does not contain headers.");
 
   const headerMap = mapCsvHeaders(headers);
@@ -50,7 +59,9 @@ export function parseCsv(content: string) {
   }
 
   return {
-    rows: parsed.data.filter((row) => Object.values(row).some(Boolean)),
+    rows: parsed.data
+      .map((row) => Object.fromEntries(headers.map((header) => [header, row[header] ?? ""])))
+      .filter((row) => Object.values(row).some(Boolean)),
     headers,
     headerMap
   };

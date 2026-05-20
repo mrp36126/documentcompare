@@ -293,7 +293,7 @@ function splitParsedTextLine(line: string) {
   const trimmed = line.trim();
   if (!trimmed) return [];
 
-  if (trimmed.includes("\t")) return trimmed.split(/\t+/).map((value) => value.trim()).filter(Boolean);
+  if (line.includes("\t")) return line.split(/\t/).map((value) => value.trim());
   return trimmed.split(/\s{2,}/).map((value) => value.trim()).filter(Boolean);
 }
 

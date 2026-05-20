@@ -66,7 +66,7 @@ export async function POST(request: Request, context: Params) {
     const extractedRows = rowsFromDb(dbRows ?? []);
     if (!extractedRows.length) return NextResponse.json({ error: "No corrected extracted rows are available." }, { status: 400 });
 
-    const result = compareRows(extractedRows, parsed.rows, { sourceDocumentId: id });
+    const result = compareRows(extractedRows, parsed.rows, { sourceDocumentId: id, headerMap: parsed.headerMap });
     const allUpdatedColumns = Array.from(new Set([...parsed.headers, "lastUpdated", "sourceDocumentId", "updateStatus"]));
     const updatedCsv = rowsToCsv(result.updatedRows, allUpdatedColumns);
     const exceptionCsv = rowsToCsv(

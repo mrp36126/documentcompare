@@ -10,14 +10,16 @@ import { normalizeText } from "@/lib/text/normalizeText";
 export type CompareOptions = {
   matchFields?: Array<"issuedToOrReceivedFrom" | "refNo" | "batchNo" | "date">;
   sourceDocumentId?: string;
+  headerMap?: Map<string, string>;
 };
 
 const DEFAULT_MATCH_FIELDS: NonNullable<CompareOptions["matchFields"]> = ["issuedToOrReceivedFrom"];
 
-function getMasterValue(row: MasterCsvRow, header: string) {
-  const exact = row[header];
+function getMasterValue(row: MasterCsvRow, header: string, headerMap?: Map<string, string>) {
+  const sourceHeader = headerMap?.get(header) ?? header;
+  const exact = row[sourceHeader];
   if (exact !== undefined) return exact;
-  const foundKey = Object.keys(row).find((key) => normalizeText(key) === normalizeText(header));
+  const foundKey = Object.keys(row).find((key) => normalizeText(key) === normalizeText(sourceHeader) || normalizeText(key) === normalizeText(header));
   return foundKey ? row[foundKey] : "";
 }
 
@@ -25,8 +27,8 @@ function buildKeyFromExtracted(row: CorrectedRow, fields: NonNullable<CompareOpt
   return fields.map((field) => normalizeText(row[field])).join("|");
 }
 
-function buildKeyFromMaster(row: MasterCsvRow, fields: NonNullable<CompareOptions["matchFields"]>) {
-  return fields.map((field) => normalizeText(getMasterValue(row, FIELD_TO_HEADER[field]))).join("|");
+function buildKeyFromMaster(row: MasterCsvRow, fields: NonNullable<CompareOptions["matchFields"]>, headerMap?: Map<string, string>) {
+  return fields.map((field) => normalizeText(getMasterValue(row, FIELD_TO_HEADER[field], headerMap))).join("|");
 }
 
 export function compareRows(
@@ -35,11 +37,12 @@ export function compareRows(
   options: CompareOptions = {}
 ): CompareResult {
   const matchFields = options.matchFields?.length ? options.matchFields : DEFAULT_MATCH_FIELDS;
+  const headerMap = options.headerMap;
   const masterByKey = new Map<string, MasterCsvRow>();
   const duplicateKeys = new Set<string>();
 
   for (const row of masterRows) {
-    const key = buildKeyFromMaster(row, matchFields);
+    const key = buildKeyFromMaster(row, matchFields, headerMap);
     if (!key) continue;
     if (masterByKey.has(key)) duplicateKeys.add(key);
     else masterByKey.set(key, row);
@@ -65,7 +68,10 @@ export function compareRows(
 
     const index = masterRows.indexOf(master);
     const updated = { ...updatedRows[index] };
-    for (const field of FIELD_KEYS) updated[FIELD_TO_HEADER[field]] = extracted[field] ?? "";
+    for (const field of FIELD_KEYS) {
+      const canonicalHeader = FIELD_TO_HEADER[field];
+      updated[headerMap?.get(canonicalHeader) ?? canonicalHeader] = extracted[field] ?? "";
+    }
     updated.lastUpdated = new Date().toISOString();
     updated.sourceDocumentId = options.sourceDocumentId ?? "";
     updated.updateStatus = "updated";
